@@ -1,20 +1,16 @@
 package ru.netology;
-
 import com.github.javafaker.Faker;
-import com.google.gson.Gson;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
-import lombok.AllArgsConstructor;
 import lombok.Value;
+
+import java.util.Locale;
 
 import static io.restassured.RestAssured.given;
 
 public class DataGenerator {
-    private DataGenerator() {
-    }
-
     private static final RequestSpecification requestSpec = new RequestSpecBuilder()
             .setBaseUri("http://localhost")
             .setPort(9999)
@@ -22,34 +18,26 @@ public class DataGenerator {
             .setContentType(ContentType.JSON)
             .log(LogDetail.ALL)
             .build();
+    private static final Faker faker = new Faker(new Locale("en"));
 
-    public static void activeUser(UserInfo user) {
+    private DataGenerator() {
+    }
+
+    private static RegistrationDto sendRequest(RegistrationDto user) {
         given()
                 .spec(requestSpec)
-                .body(new Gson().toJson(user))
-                .when()
+                .body(user)
                 .post("/api/system/users")
                 .then()
                 .statusCode(200);
+        return user;
     }
 
-    public static void blockedUser(UserInfo user) {
-        given()
-                .spec(requestSpec)
-                .body(new Gson().toJson(user))
-                .when()
-                .post("/api/system/users")
-                .then()
-                .statusCode(200);
-    }
-
-    public static Faker faker = new Faker();
-
-    public static String generateLogin() {
+    public static String getRandomLogin() {
         return faker.name().username();
     }
 
-    public static String generatePassword() {
+    public static String getRandomPassword() {
         return faker.internet().password();
     }
 
@@ -57,14 +45,17 @@ public class DataGenerator {
         private Registration() {
         }
 
-        public static UserInfo generateUser(String status) {
-            return new UserInfo(generateLogin(), generatePassword(), status);
+        public static RegistrationDto getUser(String status) {
+            return new RegistrationDto(getRandomLogin(), getRandomPassword(), status);
+        }
+
+        public static RegistrationDto getRegisteredUser(String status) {
+            return sendRequest(getUser(status));
         }
     }
 
     @Value
-    @AllArgsConstructor
-    public static class UserInfo {
+    public static class RegistrationDto {
         String login;
         String password;
         String status;
